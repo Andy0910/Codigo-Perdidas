@@ -115,7 +115,14 @@ esp.yu
 ### 4.4 Generalizacion de modificaciones
 
 ```{r}
+#FALTA
 
+
+```
+
+### 4.5 Impacto deducible frecuencia de reclamos
+
+```{r}
 
 
 ```
