@@ -1,0 +1,29 @@
+---
+title: "Perdidas trab clase"
+author: "Andres gonzalez"
+date: "1/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+1-(1-((2000/2500)^3))
+
+x <- 0:5000
+fpareto <- dpareto(x, shape = 3, scale = 2000)
+plot(x,fpareto)
+
+```
+```{r}
+n <- 100000
+pareto_aleatorio <- rpareto(n, shape = 3, scale = 2000)
+hist(pareto_aleatorio, freq = FALSE, breaks = 1000)
+
+
+
+
+```
+
