@@ -9,6 +9,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Ejercicios en clase
+
+## Deducibles
+
+### 4.1 Deducibles de franquicia
+
 ```{r}
 1-(1-((2000/2500)^3))
 
@@ -17,13 +23,99 @@ fpareto <- dpareto(x, shape = 3, scale = 2000)
 plot(x,fpareto)
 
 ```
+
 ```{r}
 n <- 100000
 pareto_aleatorio <- rpareto(n, shape = 3, scale = 2000)
 hist(pareto_aleatorio, freq = FALSE, breaks = 1000)
 
+```
+
+```{r}
+idx <- pareto_aleatorio > 500
+YL <- numeric(n)
+YL[idx] <- pareto_aleatorio[idx]
+YL[!idx] <- 0
+hYL <- hist(YL, breaks = 1000, freq = FALSE, xlim = c(0, 5000))
+```
+
+```{r}
+x <- 1:5000
+fYL <- 3 * (2000)^3 / (2000 + x)^4
+plot(1:5000, fYL)
+points(hYL$mids, hYL$density, col = "red", type = "h")
+
+
+```
+```{R}
+YP <- NA
+YP[idx] <- pareto_aleatorio[idx]
+hYP <- hist(YP, breaks = 5000, freq = FALSE)
+```
+
+```{r}
+x <- 1:5000
+fYP <- 3*(2500)^3/(x+2000)^4
+plot(1:5000, fYP)
+points(hYP$mids, hYP$density, col = "red", type = "h")
+
+```
+```{r}
+plot(1:5000, fYP, type = "l", col = "blue")
+lines(1:5000, fYL, col = "red")
+```
+
+### 4.3 Efecto de la inflacion
+
+```{r}
+k<-500/1.1
+r<- 0.1
+
+costo.perdida <- (1+r)*( (2000/2) - ((2000/2)*(1-( (2000)^2/((2000+k)^2))  )) )
+
+costo.pago <- costo.perdida / ((2000/(k+2000))^3)
+
+costo.pago
+
+```
+### 4.3.5 Limite de poliza
+```{r}
+n <- 100000
+pareto_aleatorio <- rpareto(n, shape = 3, scale = 2000)
+hist(pareto_aleatorio, freq = FALSE, breaks = 1000)
+
+```
+
+```{r}
+idx <- pareto_aleatorio < 3000
+YL <- numeric(n)
+YL[idx] <- pareto_aleatorio[idx]
+YL[!idx] <- 3000
+hYL <- hist(YL, breaks = 1000, freq = FALSE, xlim = c(0, 5000))
+```
+
+```{r}
+x <- 1:5000
+fYL <- 3 * (2000)^3 / (2000 + x)^4
+plot(1:5000, fYL)
+points(hYL$mids, hYL$density, col = "red", type = "h")
+```
+
+#### Valor esperado con inflacion y sin inflacion, limite de poliza
+
+```{r}
+k <- 3000/1.1
+esp.yu.infl <- (1.1)*(1000 *(1-((2000/(2000+k))^2)) )
+esp.yu <- 1000*(1-( (2000/5000)^2  ))
+
+esp.yu.infl
+esp.yu
+```
+
+### 4.4 Generalizacion de modificaciones
+
+```{r}
 
 
 
 ```
-
