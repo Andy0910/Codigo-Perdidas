@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
 # Ejercicios en clase
@@ -123,6 +124,86 @@ esp.yu
 ### 4.5 Impacto deducible frecuencia de reclamos
 
 ```{r}
+
+
+```
+
+## 5.4 Impacto de las pólizas individuales al modelo agregado
+
+### Ejercicio 5.5
+
+```{r}
+
+N <- read.csv("cap04_ejercicio_5_5_N.csv")
+X <- read.csv("cap04_ejercicio_5_5_X.csv")
+
+
+
+#Ajustar dist de la N
+
+nn <- data.frame(table(N$x))
+
+
+
+n <- 1:9 * nn$Freq[2:length(nn$Var1)] / nn$Freq[1:(length(nn$Var1) -1 )]
+
+plot(n)
+
+n_techo <- data.frame(i = 1:length(n),n)
+
+
+modelo <- lm(n_techo$n ~ n_techo$i)
+
+a <- modelo$coefficients[1]
+b <- modelo$coefficients[2]
+
+```
+
+## Modelo de riesgo individual
+
+### Ejercicio 5.6
+
+```{r}
+tabla9.16 <- read.csv(text = "Empleado,Edad,Genero,Beneficio,Mortalidad
+1,20,M ,15000,0.00149
+2,23,M ,16000,0.00142
+3,27,M ,20000,0.00128
+4,30,M ,28000,0.00122
+5,31,M ,31000,0.00123
+6,46,M ,18000,0.00353
+7,47,M ,26000,0.00394
+8,49,M ,24000,0.00484
+9,64,M ,60000,0.02182
+10,17,F ,14000,0.0005
+11,22,F ,17000,0.0005
+12,26,F ,19000,0.00054
+13,37,F ,30000,0.00103
+14,55,F ,55000,0.00479
+")
+
+mu_S <- tabla9.16 %>%
+  mutate(prod = Beneficio * Mortalidad) %>%
+  summarise(sum(prod))
+mu_S
+
+var_S <- tabla9.16 %>%
+  mutate(prod = Beneficio^2 * Mortalidad * (1 - Mortalidad)) %>%
+  summarise(sum(prod))
+var_S
+
+mu_s <- mu_S$`sum(prod)`[1] / 1000
+sd_s <- sqrt( var_S$`sum(prod)`[1] / (1000*1000) )
+
+
+pnorm(mu_s, mean=mu_s, sd = sd_s, lower.tail = F)
+
+plnorm(mu_s,meanlog = -0.89516, sdlog = 1.79733 , lower.tail = F)
+
+#aumento del 45%
+
+pnorm(mu_s * 1.45 , mean=mu_s, sd=sd_s, lower.tail = F)
+
+plnorm(mu_s * 1.45, mean=-0.89516, sd=1.79733,lower.tail = F)
 
 
 ```
