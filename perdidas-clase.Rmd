@@ -205,5 +205,196 @@ pnorm(mu_s * 1.45 , mean=mu_s, sd=sd_s, lower.tail = F)
 
 plnorm(mu_s * 1.45, mean=-0.89516, sd=1.79733,lower.tail = F)
 
+```
+
+## 6.3 Estimador de kaplan-meier y nelson-allen
+
+```{r}
+library(tidyverse)
+library(actuar)
+library(survival)
+library(insuranceData)
+library(ggfortify)
+library(survminer)
+library(goftest)
+
+tabla_d <- read.csv(text = "policy,d,obs,event
+1,0,0.1,s
+2,0,0.5,s
+3,0,0.8,s
+4,0,0.8,d
+5,0,1.8,s
+6,0,1.8,s
+7,0,2.1,s
+8,0,2.5,s
+9,0,2.8,s
+10,0,2.9,d
+11,0,2.9,d
+12,0,3.9,s
+13,0,4,d
+14,0,4,s
+15,0,4.1,s
+16,0,4.8,d
+17,0,4.8,s
+18,0,4.8,s
+19,0,5,e
+20,0,5,e
+21,0,5,e
+22,0,5,e
+23,0,5,e
+24,0,5,e
+25,0,5,e
+26,0,5,e
+27,0,5,e
+28,0,5,e
+29,0,5,e
+30,0,5,e
+31,0.3,5,e
+32,0.7,5,e
+33,1,4.1,d
+34,1.8,3.1,d
+35,2.1,3.9,s
+36,2.9,5,e
+37,2.9,4.8,s
+38,3.2,4,d
+39,3.4,5,e
+40,3.9,5,e")
+
+#incluir si esta vivo o no
+tabla_d <- tabla_d %>%
+mutate(delta = case_when(
+event == "d" ~ 1,
+event %in% c("s", "e") ~ 0
+))
+
+#construccion de intervalos
+surv1 <- Surv(
+time = tabla_d$d,
+time2 = tabla_d$obs,
+event = tabla_d$delta
+)
+surv1
+
+#calculo kaplan-meier
+kaplan_meier <- survfit(surv1 ~ 1)
+summary(kaplan_meier)
+
+autoplot(kaplan_meier)
+
+ggsurvplot(kaplan_meier, data = tabla_d, conf.int = TRUE)
+
+ggsurvplot(kaplan_meier, data = tabla_d, conf.int = TRUE, risk.table = TRUE)
+
+#calculo nelson-allen
+nelson_allen <- survfit(surv1 ~ 1, type = "fleming-harrington")
+summary(nelson_allen)
+
+autoplot(nelson_allen)
+
+ggsurvplot(nelson_allen, data = tabla_d, conf.int = TRUE)
+
+ggsurvplot(nelson_allen, data = tabla_d, conf.int = TRUE, risk.table = TRUE)
+
+#estimadores combinados
+ggsurvplot_combine(
+list(kaplan_meier, nelson_allen),
+data = tabla_d,
+legend.labs = c("Kaplan Meier", "Nelson Allen")
+)
+
+ggsurvplot_combine(
+list(kaplan_meier, nelson_allen),
+data = tabla_d,
+legend.labs = c("Kaplan Meier", "Nelson Allen"),
+fun = "cumhaz"
+)
+
+#Intervalos de confianza
+#+- 1.96 VaR(Sn(t))
+kaplan_meier_plain <- survfit(surv1 ~ 1, conf.type = "plain")
+#utilizando g = log(-log(S))
+kaplan_meier_loglog <- survfit(surv1 ~ 1, conf.type = "log-log")
+
+ggsurvplot_combine(
+list(kaplan_meier_plain, kaplan_meier_loglog),
+data = tabla_d,
+legend.labs = c("IC Normal", "IC Log-Log"), conf.int = TRUE
+)
+
+
+```
+
+## 6.5 Estimacion curvas sobrevivencia 
+
+### 6.5.5 Maxima verosimilitud
+
+```{r}
+library(flexsurv)
+
+# name = pareto del paquete actuar
+custom_pareto <-
+list(
+name = "pareto",
+pars = c("shape", "scale"),
+location = c("scale"),
+transforms = c(log, log),
+inv.transforms = c(exp, exp)
+)
+
+#hace la estimacion por max verosim con la funcion pareto que creamos
+parametric_pareto <- flexsurvreg(
+surv1 ~ 1,
+dist = custom_pareto,
+inits = c(1, 1)
+)
+
+#funcion de S con los parametros calculados
+summary(parametric_pareto)
+
+parametric_pareto
+
+plot(parametric_pareto)
+
+#No esta tan bien, entonces repetimos con una gamma
+parametric_gamma <- flexsurvreg(
+surv1 ~ 1,
+dist = "gamma",
+inits = c(1, 1)
+)
+
+summary(parametric_gamma)
+
+parametric_gamma
+
+plot(parametric_gamma)
+
+#Ejemplo con dataCar
+
+library(fitdistrplus)
+
+data("dataCar")
+
+summary(dataCar)
+
+#describe la forma de distribuciones conocidas con la forma de los datos
+descdist(dataCar$claimcst0, discrete=FALSE)
+
+descdist(dataCar$claimcst0[dataCar$clm == 1], discrete = FALSE)
+
+#funcion de sobrevivencia tomando en cuenta todos los reclamos
+surv2 <- Surv(time = dataCar$claimcst0)
+km_policy <- survfit(surv2 ~ 1)
+autoplot(km_policy)
+ggsurvplot(km_policy, data = dataCar)
+
+#solo los que se reclamaron
+surv3 <- Surv(time = dataCar$claimcst0[dataCar$clm == 1])
+km_policy <- survfit(surv3 ~ 1)
+autoplot(km_policy)
+ggsurvplot(km_policy, data = dataCar)
+
+#ajusta una gamma
+data_car_gamma <- flexsurvreg(surv3 ~ 1, dist = "gamma", inits = c(1, 1))
+plot(data_car_gamma)
 
 ```
