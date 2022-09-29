@@ -398,3 +398,290 @@ data_car_gamma <- flexsurvreg(surv3 ~ 1, dist = "gamma", inits = c(1, 1))
 plot(data_car_gamma)
 
 ```
+
+
+## 7
+
+### Ejercicio 7.3 - Maxima Verosimilitud para ajustar los modelos
+
+#### Binomial
+
+```{r}
+library(fitdistrplus)
+library(actuar)
+
+loglik <- data.frame("dist" = numeric(0), "loglik" = numeric(0))
+
+#Carga de datos
+tabla_14_7 <- read.csv("~/andrestemp/tabla_14_7.csv")
+
+#Desagregar datos
+tabla_14_7.flat <- rep(tabla_14_7$accidentes, tabla_14_7$polizas)
+
+hist(tabla_14_7.flat)
+
+#Binomial
+binomial_loglik <- data.frame(
+  size = numeric(0),
+  prob = numeric(0),
+  loglik = numeric(0)
+)
+
+for(s in 6:15){
+  fit_binom <- fitdist(
+    data = tabla_14_7.flat,
+    dist = "binom",
+    fix.arg = list(size = s),
+    start = list(prob = 0.3)
+  )
+  binomial_loglik <- rbind(
+    binomial_loglik,
+    data.frame(
+      size = s,
+      prob = fit_binom$estimate,
+      loglik = -fit_binom$loglik
+    )
+  )
+}
+
+
+
+loglik <- rbind(loglik, data.frame(dist = "binom",loglik = min(binomial_loglik$loglik)) )
+
+```
+
+#### ZM Binomial
+
+```{r}
+#Zero Modified Binomial
+zmbinomial_loglik <- data.frame(
+  size = numeric(0),
+  prob = numeric(0),
+  p0 = numeric(0),
+  loglik = numeric(0)
+)
+
+for(s in 18:24){
+  fit_zmbinom <- fitdist(
+    data = tabla_14_7.flat,
+    dist = "zmbinom",
+    fix.arg = list(size = s),
+    start = list(prob = 0.3, p0 = (tabla_14_7$polizas[1] / sum(tabla_14_7$polizas)))
+  )
+  zmbinomial_loglik <- rbind(
+    zmbinomial_loglik,
+    data.frame(
+      size = s,
+      prob = fit_zmbinom$estimate["prob"],
+      p0 = fit_zmbinom$estimate["p0"],
+      loglik = -fit_zmbinom$loglik
+    )
+  )
+}
+
+loglik <- rbind(loglik, data.frame(dist = "zmbinom",loglik = min(zmbinomial_loglik$loglik)) )
+
+```
+
+#### Binomial neg
+
+```{r}
+#Binomial neg
+fit_nbinom <- fitdist(
+  data = tabla_14_7.flat,
+  dist = "nbinom",
+  start = list(prob = 0.3, size = 6)
+)
+
+
+loglik <- rbind(loglik, data.frame(dist = "neg binom",loglik = -fit_nbinom$loglik)) 
+```
+
+#### ZM Binomial Neg
+
+```{r}
+#Zero Modified Binomial Neg
+fit_zmnbinom <- fitdist(
+  data = tabla_14_7.flat,
+  dist = "zmnbinom",
+  start = list(prob = 0.3, p0 = (tabla_14_7$polizas[1] / sum(tabla_14_7$polizas)), size = 5)
+)
+
+
+loglik <- rbind(loglik, data.frame(dist = "zm nbinom",loglik = -fit_zmnbinom$loglik)) 
+
+```
+
+
+#### Geometrica
+
+```{r}
+#Geometrica
+fit_geom <- fitdist(
+  data = tabla_14_7.flat,
+  dist = "geom",
+  start = list(prob = 0.3)
+)
+
+loglik <- rbind(loglik, data.frame(dist = "geom",loglik = -fit_geom$loglik)) 
+
+```
+#### ZM Geometrica
+
+
+```{r}
+#Zero Modified Geom
+
+fit_zmgeom <- fitdist(
+  data = tabla_14_7.flat,
+  dist = "zmgeom",
+  start = list(prob = 0.3, p0 = (tabla_14_7$polizas[1] / sum(tabla_14_7$polizas)))
+)
+
+
+loglik <- rbind(loglik, data.frame(dist = "zm geom",loglik = -fit_zmgeom$loglik)) 
+```
+
+#### Poisson
+
+
+```{r}
+#Poisson
+
+fit_pois <- fitdist(
+  data = tabla_14_7.flat,
+  dist = "pois",
+  start = list(lambda = 0.3)
+)
+
+
+loglik <- rbind(loglik, data.frame(dist = "pois",loglik = -fit_pois$loglik)) 
+
+```
+
+#### ZM Poisson
+
+
+```{r}
+#Zero Modified Poisson
+fit_zmpois <- fitdist(
+  data = tabla_14_7.flat,
+  dist = "zmpois",
+  start = list(lambda = 0.3, p0 = (tabla_14_7$polizas[1] / sum(tabla_14_7$polizas)))
+)
+
+
+loglik <- rbind(loglik, data.frame(dist = "zm pois",loglik = -fit_zmpois$loglik)) 
+```
+
+#### Ver cual verosimilitud es menor (tomamos minimos por poner -log likelihood)
+
+```{r}
+min_loglik <- loglik[order(loglik$loglik),]$dist[1]
+min_loglik
+
+prob_est <- fit_zmgeom$estimate["prob"]
+p0_est <- fit_zmgeom$estimate["p0"]
+
+hist(rzmgeom(10000, prob = prob_est, p0 = p0_est  ))
+hist(tabla_14_7.flat)
+```
+
+## 8 Aplicaciones practicas modelos de frecuencia y severidad
+
+### EJEMPLO
+
+```{r}
+library(flexsurv)
+library(actuar)
+library(survminer)
+library(fitdistrplus)
+
+S <- rcompound(
+  n = 200,
+  model.freq = rpois(lambda = 1.5),
+  model.sev = rpareto(shape = 7, scale = 2000),
+  SIMPLIFY = FALSE
+)
+
+hist(S$severity)
+
+hist(S$frequency)
+
+hist(S$frequency)
+
+severity <- S$severity
+severity[severity <= 100] <- NA
+severity[severity >= 1000] <- 1000
+severity <- na.omit(severity)
+hist(severity)
+
+frequency <- S$frequency
+
+delta <- severity != 1000
+surv <- Surv(time = rep(100,length(severity)),
+             time2 = severity,
+             event = delta)
+
+custom_pareto <- list(
+  name = "pareto",
+  pars = c("shape", "scale"),
+  location = c("scale"),
+  transforms = c(log, log),
+  inv.transforms = c(exp, exp)
+)
+fit_severity <- flexsurvreg(
+  formula = surv ~ 1,
+  dist = custom_pareto,
+  inits = c(1, 1)
+)
+
+fit_frequency <- fitdist(data=frequency, dist = "pois")
+
+x <- seq.int(100, 1000, 100)
+
+severity_discrete <- discretize(
+  cdf = ppareto(x,
+    shape = fit_severity$coefficients["shape"],
+    scale = fit_severity$coefficients["scale"]
+  ),
+  from = 100,
+  to = 1000,
+  by = 25
+)
+severity_discrete
+
+frequency_discrete <- dpois(x = 0:20, lambda = fit_frequency$estimate)
+frequency_discrete
+```
+
+### Ejercicio 8.1
+
+```{r}
+fX <- severity_discrete
+pn <- matrix(frequency_discrete[1:10],nrow=1)
+
+#Devolverse al cap 5
+
+ncolumnas <- length(pn) - 1
+nfilas <- 20
+tabla_convolucion <- matrix(0, nrow = nfilas + 1, ncol = ncolumnas + 1)
+
+tabla_convolucion[1, 1] <- 1
+
+for (nc in 1:ncolumnas) {
+  for (nf in 1:nfilas) {
+    s <- 0
+    for (k in seq_len(min(nf, length(fX)))) {
+      s <- s + tabla_convolucion[nf - k + 1, nc] * fX[k]
+    }
+    tabla_convolucion[nf + 1, nc + 1] <- s
+  }
+}
+
+pn_tabla <- kronecker(matrix(1, nrow = nfilas + 1), pn)
+
+fS <- rowSums(pn_tabla * tabla_convolucion)
+
+plot(0:nfilas, fS, type = "l", xlab = "payment", ylab = "aggregate density")
+```
