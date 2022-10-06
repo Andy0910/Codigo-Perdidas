@@ -685,3 +685,5 @@ fS <- rowSums(pn_tabla * tabla_convolucion)
 
 plot(0:nfilas, fS, type = "l", xlab = "payment", ylab = "aggregate density")
 ```
+
+### Cap 9
