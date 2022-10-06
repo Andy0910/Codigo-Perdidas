@@ -659,7 +659,7 @@ frequency_discrete
 
 ```{r}
 fX <- severity_discrete
-pn <- matrix(frequency_discrete[1:10],nrow=1)
+pn <- matrix(frequency_discrete,nrow=1)
 
 #Devolverse al cap 5
 
