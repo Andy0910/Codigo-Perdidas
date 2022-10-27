@@ -745,4 +745,6 @@ weib <- fitdist(temp$max, "weibull")
 qweibull(1/50,weib$estimate[1],weib$estimate[2],lower.tail=F)
 
 gev <- fitdist(temp$max, "evd", start = list(loc = 10, scale = 0.5, shape = 0, threshold = 0), method = "mge")
+
+qevd(1/50, gev$estimate[1],gev$estimate[2],gev$estimate[3],gev$estimate[4],lower.tail = F)
 ```
