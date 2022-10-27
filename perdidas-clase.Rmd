@@ -686,3 +686,63 @@ fS <- rowSums(pn_tabla * tabla_convolucion)
 plot(0:nfilas, fS, type = "l", xlab = "payment", ylab = "aggregate density")
 ```
 
+#10 Eventos Extremos
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(extRemes)
+library(fitdistrplus)
+library(actuar)
+
+temperature <- read.csv(file = "http://www.dataanalysisclassroom.com/wp-content/uploads/2018/03/cp_temperature.csv")
+
+temperature <- temperature %>%
+  filter(Year <= 2017) %>%
+  mutate(
+    TAVG_C = (TAVG - 32) * 5 / 9,
+    TMIN_C = (TMIN - 32) * 5 / 9,
+    TMAX_C = (TMAX - 32) * 5 / 9
+  )
+
+ggplot(temperature %>% filter(Year >= 1995)) +
+  geom_point(aes(as.factor(Month), TAVG_C)) +
+  facet_wrap(~Year)
+
+
+temp <- temperature %>% group_by(Year) %>% summarize(max = max(TAVG_C))
+
+fit.GEV <- fevd(temp$max,type="GEV")
+
+plot(fit.GEV)
+summary(fit.GEV)
+
+fit.GUM <- fevd(temp$max,type="Gumbel")
+  
+
+plot(fit.GUM)
+summary(fit.GUM)
+
+fd <- fitdist(temp$max, "gumbel", start = list(alpha = 10, scale = 1))
+fd
+
+#sort(temp$max)
+# d <- rgumbel(seq(26,40,0.01), alpha = fd$estimate[1], scale=fd$estimate[2] )
+# 
+# temp <- data.frame(cbind(temp, d))
+
+
+p33 <- pgumbel(33,fd$estimate[1],fd$estimate[2],lower.tail=F)
+
+
+1/p33
+
+qgumbel(1/50,fd$estimate[1],fd$estimate[2],lower.tail=F)
+```
+```{r}
+library(EnvStats)
+weib <- fitdist(temp$max, "weibull")
+qweibull(1/50,weib$estimate[1],weib$estimate[2],lower.tail=F)
+
+gev <- fitdist(temp$max, "evd", start = list(loc = 10, scale = 0.5, shape = 0, threshold = 0), method = "mge")
+```
