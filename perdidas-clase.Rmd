@@ -748,3 +748,97 @@ gev <- fitdist(temp$max, "evd", start = list(loc = 10, scale = 0.5, shape = 0, t
 
 qevd(1/50, gev$estimate[1],gev$estimate[2],gev$estimate[3],gev$estimate[4],lower.tail = F)
 ```
+
+### Exceso de perdida
+
+```{r}
+spy <- read.csv("spy.csv")
+
+retornos <- diff(log(spy$Adj.Close))
+
+plot(retornos, type = "line")
+
+x <- seq(0.01,0.12,length.out=5000)
+
+ed <- rep(0,1000)
+
+for(i in 1:length(x)){
+  num <- 0
+  count <- 0
+  for(j in 1:length(retornos)){
+    
+    if(retornos[j] > x[i]){
+      num <- num + retornos[j] - x[i]
+      count <- count + 1
+    }
+  }
+  ed[i] <- num / count
+}  
+
+plot(x,ed, type="line")
+  
+  
+library(extRemes)
+library(fitdistrplus)
+
+ret.pos <- retornos[retornos > 0.01] - 0.01
+
+
+
+fit <- fevd(ret.pos, location.fun = 0, threshold = 0, scale.fun = 1, shape.fun = 0,type="GP")
+fit
+
+fit.w <- fitdist(ret.pos, distr = "weibull")
+summary(fit.w)
+
+plot(fit)
+plot(fit.w)
+
+```
+
+```{r}
+#Lo mismo pero con reclamos
+reclamos <- read.csv("reclamos.csv")
+reclamos <- reclamos$x
+
+plot(reclamos)
+
+quantile(reclamos,probs = 0.9)
+
+x <- seq(6000,13000,length.out=5000)
+
+ed <- rep(0,5000)
+
+for(i in 1:length(x)){
+  num <- 0
+  count <- 0
+  for(j in 1:length(reclamos)){
+    
+    if(reclamos[j] > x[i]){
+      num <- num + reclamos[j] - x[i]
+      count <- count + 1
+    }
+  }
+  ed[i] <- num / count
+}  
+
+plot(x,ed, type="line")
+
+#Por la forma es mejor una weibull
+
+rec.pos <- reclamos[reclamos > 6000] - 6000
+
+
+fit <- fevd(rec.pos, location.fun = 0, threshold = 0, scale.fun = 1, shape.fun = 0,type="GP")
+fit
+
+fit.b <- fitdist(rec.pos, distr = "beta", start=list(shape1=1,shape2=1), method = "mge")
+summary(fit.b)
+
+plot(fit)
+plot(fit.b)
+
+
+descdist(rec.pos)
+
+```
